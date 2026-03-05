@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>エゴグラム診断</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #8b6914;
+    --accent-light: #c9a84c;
+    --line: #c8b89a;
+    --CP: #c0392b;
+    --NP: #27ae60;
+    --A:  #2980b9;
+    --FC: #f39c12;
+    --AC: #8e44ad;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 28px 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+  }
+  header span {
+    font-size: .85rem;
+    opacity: .6;
+    letter-spacing: .08em;
+  }
+
+  /* ── Progress bar ── */
+  #progress-wrap {
+    background: var(--cream);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: .8rem;
+    color: var(--accent);
+  }
+  #progress-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  #progress-bar-fill {
+    height: 100%;
+    background: var(--accent-light);
+    border-radius: 3px;
+    transition: width .3s ease;
+    width: 0%;
+  }
+
+  /* ── Main sections ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Info form ── */
+  #section-info {
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 0 24px;
+  }
+  .info-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+  }
+  .info-sub {
+    font-size: .85rem;
+    color: #666;
+    margin-bottom: 36px;
+    line-height: 1.7;
+  }
+  .field {
+    margin-bottom: 24px;
+  }
+  .field label {
+    display: block;
+    font-size: .8rem;
+    letter-spacing: .08em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    background: #fff;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: .95rem;
+    color: var(--ink);
+    outline: none;
+    border-radius: 2px;
+    transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent-light);
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 14px 36px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: .95rem;
+    letter-spacing: .06em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .2s, transform .1s;
+  }
+  .btn-primary:hover { background: #2d2d4e; }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 12px 28px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: .9rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color .2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent-light); }
+
+  /* ── Questions ── */
+  #section-quiz {
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 0 24px 60px;
+  }
+  .q-group-label {
+    font-size: .72rem;
+    letter-spacing: .12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .q-group-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .question-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .question-card:hover { border-color: var(--accent-light); }
+  .question-card.answered { border-left: 3px solid var(--accent-light); }
+  .q-text {
+    font-size: .9rem;
+    line-height: 1.7;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  .q-num {
+    font-size: .72rem;
+    color: #999;
+    margin-bottom: 6px;
+  }
+  .options {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .opt-btn {
+    flex: 1;
+    padding: 9px 4px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--line);
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: .78rem;
+    color: #888;
+    transition: background .15s, color .15s;
+  }
+  .opt-btn:last-child { border-right: none; }
+  .opt-btn:hover { background: var(--cream); color: var(--ink); }
+  .opt-btn.selected { background: var(--ink); color: var(--paper); }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+  }
+  .page-indicator {
+    font-size: .8rem;
+    color: #888;
+  }
+
+  /* ── Result ── */
+  #section-result {
+    max-width: 820px;
+    margin: 40px auto;
+    padding: 0 24px 80px;
+  }
+  .result-header {
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .result-header h2 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  .result-meta { font-size: .82rem; color: #888; }
+
+  .chart-wrap {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 32px;
+    margin-bottom: 28px;
+  }
+  .chart-title {
+    font-size: .75rem;
+    letter-spacing: .1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .score-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 20px 12px;
+    text-align: center;
+  }
+  .score-label {
+    font-size: .72rem;
+    letter-spacing: .1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .score-label.CP { color: var(--CP); }
+  .score-label.NP { color: var(--NP); }
+  .score-label.A  { color: var(--A);  }
+  .score-label.FC { color: var(--FC); }
+  .score-label.AC { color: var(--AC); }
+  .score-value {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .score-max { font-size: .7rem; color: #aaa; }
+
+  .score-bar-wrap {
+    height: 4px;
+    background: var(--cream);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .score-card.CP .score-bar-fill { background: var(--CP); }
+  .score-card.NP .score-bar-fill { background: var(--NP); }
+  .score-card.A  .score-bar-fill { background: var(--A);  }
+  .score-card.FC .score-bar-fill { background: var(--FC); }
+  .score-card.AC .score-bar-fill { background: var(--AC); }
+
+  .action-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Print/PDF styles ── */
+  @media print {
+    header, #progress-wrap, .action-row, .btn-primary, .btn-secondary { display: none !important; }
+    body { background: #fff; }
+    #section-result { max-width: 100%; margin: 0; padding: 20px; }
+    .chart-wrap, .score-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>エゴグラム診断</h1>
+  <span>Egogram — Transactional Analysis</span>
+</header>
+
+<div id="progress-wrap">
+  <span id="progress-text">開始前</span>
+  <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
+  <span id="progress-pct">0%</span>
+</div>
+
+<!-- ── SECTION 1: 基本情報 ── -->
+<div id="section-info" class="section active">
+  <p class="info-title">基本情報の入力</p>
+  <p class="info-sub">テストを始める前に、お名前と日付を入力してください。<br>入力した情報はPDF出力時に使用されます。</p>
+
+  <div class="field">
+    <label>氏名</label>
+    <input type="text" id="field-name" placeholder="例：山田 太郎">
+  </div>
+  <div class="field">
+    <label>日付</label>
+    <input type="date" id="field-date">
+  </div>
+  <div class="field">
+    <label>備考（任意）</label>
+    <input type="text" id="field-note" placeholder="例：セッション#3、初回など">
+  </div>
+
+  <button class="btn-primary" onclick="startQuiz()">テストを開始する →</button>
+</div>
+
+<!-- ── SECTION 2: 質問 ── -->
+<div id="section-quiz" class="section">
+  <div class="q-group-label" id="q-group-label"></div>
+  <div class="q-group-title" id="q-group-title"></div>
+  <div id="questions-container"></div>
+  <div class="nav-row">
+    <button class="btn-secondary" id="btn-prev" onclick="prevPage()">← 前へ</button>
+    <span class="page-indicator" id="page-indicator"></span>
+    <button class="btn-primary" id="btn-next" onclick="nextPage()">次へ →</button>
+  </div>
+</div>
+
+<!-- ── SECTION 3: 結果 ── -->
+<div id="section-result" class="section">
+  <div class="result-header">
+    <h2 id="result-name"></h2>
+    <div class="result-meta" id="result-meta"></div>
+  </div>
+
+  <div class="score-grid" id="score-grid"></div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">エゴグラム — 自我状態プロフィール</div>
+    <canvas id="egogram-chart" height="260"></canvas>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-primary" onclick="downloadPDF()">📄 PDFをダウンロード</button>
+    <button class="btn-secondary" onclick="resetApp()">もう一度やり直す</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  質問データ（標準50問エゴグラム）
+// ═══════════════════════════════════════════
+const QUESTIONS = [
+  // CP (批判的親) — 1-10
+  { id:1,  ego:"CP", text:"間違っていることは、はっきりと指摘する方だ。" },
+  { id:2,  ego:"CP", text:"社会のルールや規則は、きちんと守るべきだと思う。" },
+  { id:3,  ego:"CP", text:"「こうすべきだ」「こうあるべきだ」という信念が強い。" },
+  { id:4,  ego:"CP", text:"他人のだらしなさや不正直さが許せない。" },
+  { id:5,  ego:"CP", text:"物事に対して批判的・否定的な意見をよく言う。" },
+  { id:6,  ego:"CP", text:"正義感が強く、不公平なことに腹が立つ。" },
+  { id:7,  ego:"CP", text:"人に強く意見を主張することが多い。" },
+  { id:8,  ego:"CP", text:"「なぜできないのか」と相手を責めることがある。" },
+  { id:9,  ego:"CP", text:"完璧主義的な傾向がある。" },
+  { id:10, ego:"CP", text:"しつけや規律を大切にしている。" },
+  // NP (養育的親) — 11-20
+  { id:11, ego:"NP", text:"困っている人を見ると、放っておけない。" },
+  { id:12, ego:"NP", text:"人の話をよく聞き、共感することが得意だ。" },
+  { id:13, ego:"NP", text:"相手の気持ちに配慮して言葉を選ぶことが多い。" },
+  { id:14, ego:"NP", text:"世話を焼くことが好きで、よく人の面倒を見る。" },
+  { id:15, ego:"NP", text:"人のよいところを積極的に褒めるようにしている。" },
+  { id:16, ego:"NP", text:"悩んでいる人に寄り添い、支えてあげたいと思う。" },
+  { id:17, ego:"NP", text:"人に対して優しく、思いやりがあると言われる。" },
+  { id:18, ego:"NP", text:"相手を傷つけないよう細心の注意を払う。" },
+  { id:19, ego:"NP", text:"人が喜ぶと、自分も嬉しくなる。" },
+  { id:20, ego:"NP", text:"誰かに尽くすことで満足感を得ることが多い。" },
+  // A (成人) — 21-30
+  { id:21, ego:"A",  text:"感情より事実やデータを重視して判断する。" },
+  { id:22, ego:"A",  text:"問題を論理的・冷静に分析してから行動する。" },
+  { id:23, ego:"A",  text:"計画を立て、合理的に物事を進めることが得意だ。" },
+  { id:24, ego:"A",  text:"なぜそうなるのか、原因と結果を考える習慣がある。" },
+  { id:25, ego:"A",  text:"感情的になることは少なく、客観的でいられる。" },
+  { id:26, ego:"A",  text:"重要な決断の前に、十分な情報を集める。" },
+  { id:27, ego:"A",  text:"相手の言うことに対して、根拠を確認したくなる。" },
+  { id:28, ego:"A",  text:"物事を決める際、メリットとデメリットを書き出して比較する傾向がある。" },
+  { id:29, ego:"A",  text:"感情に流されず、公平に考えることができる。" },
+  { id:30, ego:"A",  text:"明確な目標と計画に基づいて行動している。" },
+  // FC (自由な子ども) — 31-40
+  { id:31, ego:"FC", text:"好奇心旺盛で、新しいことに積極的に挑戦する。" },
+  { id:32, ego:"FC", text:"楽しいことや遊びが好きで、ユーモアのセンスがある。" },
+  { id:33, ego:"FC", text:"自分の感情や欲求を素直に表現できる。" },
+  { id:34, ego:"FC", text:"笑い声が大きく、陽気だと言われることがある。" },
+  { id:35, ego:"FC", text:"ワクワクする体験や冒険が大好きだ。" },
+  { id:36, ego:"FC", text:"子どもっぽいとか、無邪気だと言われることがある。" },
+  { id:37, ego:"FC", text:"衝動的に行動することがあり、後から反省することも。" },
+  { id:38, ego:"FC", text:"感動や感激を素直に言葉や行動で表現する。" },
+  { id:39, ego:"FC", text:"遊び心があり、場を明るくする存在と言われる。" },
+  { id:40, ego:"FC", text:"やりたいことを優先して行動することが多い。" },
+  // AC (順応した子ども) — 41-50
+  { id:41, ego:"AC", text:"人の顔色や場の雰囲気を気にしながら行動する。" },
+  { id:42, ego:"AC", text:"頼まれると断れず、引き受けてしまうことが多い。" },
+  { id:43, ego:"AC", text:"自分の意見より相手の意見を優先することが多い。" },
+  { id:44, ego:"AC", text:"批判されると、ひどく落ち込んでしまう。" },
+  { id:45, ego:"AC", text:"みんなに合わせることで安心感を得ることが多い。" },
+  { id:46, ego:"AC", text:"自分の感情や本音を表に出さないようにしている。" },
+  { id:47, ego:"AC", text:"失敗をひどく恐れ、慎重になりすぎることがある。" },
+  { id:48, ego:"AC", text:"怒りや不満を感じても、うまく表現できない。" },
+  { id:49, ego:"AC", text:"「どうせ私なんか…」とネガティブに思うことがある。" },
+  { id:50, ego:"AC", text:"人に嫌われることをとても恐れている。" },
+];
+
+const EGO_LABELS = {
+  CP: "CP（批判的親）",
+  NP: "NP（養育的親）",
+  A:  "A（成人）",
+  FC: "FC（自由な子ども）",
+  AC: "AC（順応した子ども）",
+};
+
+const GROUPS = [
+  { ego:"CP", pages:[0] },
+  { ego:"NP", pages:[1] },
+  { ego:"A",  pages:[2] },
+  { ego:"FC", pages:[3] },
+  { ego:"AC", pages:[4] },
+];
+
+// ページ = 1グループ=1ページ (10問×5グループ)
+const PAGES = ["CP","NP","A","FC","AC"];
+const OPTIONS = [
+  { val:0, label:"全くない" },
+  { val:1, label:"めったにない" },
+  { val:2, label:"ときどきある" },
+  { val:3, label:"よくある" },
+  { val:4, label:"いつもそうだ" },
+];
+
+let answers = {}; // { questionId: value }
+let currentPage = 0;
+let userData = {};
+let chartInstance = null;
+
+// ═══════════════════════════════════════════
+//  App logic
+// ═══════════════════════════════════════════
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function updateProgress() {
+  const total = QUESTIONS.length;
+  const done = Object.keys(answers).length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progress-fill') && null;
+  document.getElementById('progress-bar-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  if (done === 0) document.getElementById('progress-text').textContent = '開始前';
+  else if (done === total) document.getElementById('progress-text').textContent = '完了';
+  else document.getElementById('progress-text').textContent = `${done} / ${total} 問回答済み`;
+}
+
+function startQuiz() {
+  const name = document.getElementById('field-name').value.trim();
+  const date = document.getElementById('field-date').value;
+  if (!name) { alert('氏名を入力してください。'); return; }
+  if (!date) { alert('日付を入力してください。'); return; }
+  userData = {
+    name,
+    date,
+    note: document.getElementById('field-note').value.trim(),
+  };
+  currentPage = 0;
+  showSection('section-quiz');
+  renderPage();
+}
+
+function renderPage() {
+  const ego = PAGES[currentPage];
+  const qs = QUESTIONS.filter(q => q.ego === ego);
+  document.getElementById('q-group-label').textContent = '';
+  document.getElementById('q-group-title').textContent = '';
+
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  qs.forEach(q => {
+    const answered = answers[q.id] !== undefined;
+    const card = document.createElement('div');
+    card.className = 'question-card' + (answered ? ' answered' : '');
+    card.id = 'card-' + q.id;
+
+    const num = document.createElement('div');
+    num.className = 'q-num';
+    num.textContent = `Q${q.id}`;
+
+    const text = document.createElement('div');
+    text.className = 'q-text';
+    text.textContent = q.text;
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    OPTIONS.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn' + (answers[q.id] === opt.val ? ' selected' : '');
+      btn.textContent = opt.label;
+      btn.onclick = () => selectAnswer(q.id, opt.val);
+      opts.appendChild(btn);
+    });
+
+    card.appendChild(num);
+    card.appendChild(text);
+    card.appendChild(opts);
+    container.appendChild(card);
+  });
+
+  // Nav
+  document.getElementById('btn-prev').style.visibility = currentPage === 0 ? 'hidden' : 'visible';
+  const isLast = currentPage === PAGES.length - 1;
+  document.getElementById('btn-next').textContent = isLast ? '結果を見る →' : '次へ →';
+  document.getElementById('page-indicator').textContent = `${currentPage+1} / ${PAGES.length}`;
+
+  updateProgress();
+  window.scrollTo(0,0);
+}
+
+function selectAnswer(qId, val) {
+  answers[qId] = val;
+  // Update card style
+  const card = document.getElementById('card-' + qId);
+  card.classList.add('answered');
+  card.querySelectorAll('.opt-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', OPTIONS[i].val === val);
+  });
+  updateProgress();
+}
+
+function prevPage() {
+  if (currentPage > 0) { currentPage--; renderPage(); }
+}
+
+function nextPage() {
+  const ego = PAGES[currentPage];
+  const qs = QUESTIONS.filter(q => q.ego === ego);
+  const unanswered = qs.filter(q => answers[q.id] === undefined);
+  if (unanswered.length > 0) {
+    alert(`この画面にまだ回答していない質問が ${unanswered.length} 問あります。`);
+    return;
+  }
+  if (currentPage < PAGES.length - 1) {
+    currentPage++;
+    renderPage();
+  } else {
+    showResult();
+  }
+}
+
+function calcScores() {
+  const scores = { CP:0, NP:0, A:0, FC:0, AC:0 };
+  QUESTIONS.forEach(q => {
+    scores[q.ego] += (answers[q.id] || 0);
+  });
+  return scores;
+}
+
+function showResult() {
+  const scores = calcScores();
+  showSection('section-result');
+
+  // Header
+  document.getElementById('result-name').textContent = userData.name + ' さんの結果';
+  const dateStr = new Date(userData.date).toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric'});
+  let meta = dateStr;
+  if (userData.note) meta += '　|　' + userData.note;
+  document.getElementById('result-meta').textContent = meta;
+
+  // Score cards
+  const grid = document.getElementById('score-grid');
+  grid.innerHTML = '';
+  ['CP','NP','A','FC','AC'].forEach(ego => {
+    const val = scores[ego];
+    const pct = (val / 40) * 100;
+    const card = document.createElement('div');
+    card.className = `score-card ${ego}`;
+    card.innerHTML = `
+      <div class="score-label ${ego}">${ego}</div>
+      <div class="score-value">${val}</div>
+      <div class="score-max">/ 40</div>
+      <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Chart
+  renderChart(scores);
+  window.scrollTo(0,0);
+}
+
+function renderChart(scores) {
+  const ctx = document.getElementById('egogram-chart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  const labels = ['CP', 'NP', 'A', 'FC', 'AC'];
+  const data = labels.map(l => scores[l]);
+  const colors = {
+    CP: '#c0392b', NP: '#27ae60', A: '#2980b9', FC: '#f39c12', AC: '#8e44ad'
+  };
+  const borderColors = labels.map(l => colors[l]);
+  const bgColors = labels.map(l => colors[l] + '22');
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'スコア',
+        data,
+        borderColor: '#1a1a2e',
+        backgroundColor: 'rgba(26,26,46,0.06)',
+        borderWidth: 2.5,
+        pointBackgroundColor: borderColors,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 8,
+        pointHoverRadius: 10,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          min: 0, max: 40,
+          ticks: { stepSize: 10, font:{ family:"'Noto Sans JP'" } },
+          grid: { color: '#e8e0d0' }
+        },
+        x: {
+          ticks: { font:{ family:"'Noto Sans JP'", size:14, weight:'600' } },
+          grid: { display: false }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y} / 40点`
+          }
+        }
+      }
+    }
+  });
+}
+
+function resetApp() {
+  answers = {};
+  userData = {};
+  currentPage = 0;
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  document.getElementById('field-name').value = '';
+  document.getElementById('field-date').value = '';
+  document.getElementById('field-note').value = '';
+  updateProgress();
+  showSection('section-info');
+}
+
+// ═══════════════════════════════════════════
+//  PDF generation (canvas → jsPDF)
+// ═══════════════════════════════════════════
+async function downloadPDF() {
+  const btn = document.querySelector('.action-row .btn-primary');
+  btn.textContent = '生成中...';
+  btn.disabled = true;
+
+  // Load jsPDF dynamically
+  if (!window.jspdf) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const W = 210, H = 297;
+  const margin = 18;
+  const scores = calcScores();
+  const egos = ['CP','NP','A','FC','AC'];
+  const colors = { CP:[192,57,43], NP:[39,174,96], A:[41,128,185], FC:[243,156,18], AC:[142,68,173] };
+
+  // ── ヘッダー帯 ──
+  doc.setFillColor(26,26,46);
+  doc.rect(0, 0, W, 22, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.setTextColor(245,240,232);
+  doc.text('Egogram Report', margin, 14);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(180,170,150);
+  doc.text('Transactional Analysis — Ego State Profile', margin, 19);
+
+  // ── 基本情報 ──
+  const dateStr = new Date(userData.date).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100,100,100);
+  doc.text('Name', W - margin - 50, 10);
+  doc.text('Date', W - margin - 50, 16);
+  doc.setTextColor(26,26,46);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+
+  // Use latin-safe text (jsPDF built-in fonts don't support CJK)
+  // We'll embed the name/date as-is; it may show as boxes for kanji
+  // but numbers and ASCII render fine
+  doc.text(userData.name, W - margin - 20, 10, { align:'right' });
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100,100,100);
+  doc.text(dateStr, W - margin - 20, 16, { align:'right' });
+
+  // ── スコアカード ──
+  let y = 30;
+  doc.setFontSize(7);
+  doc.setTextColor(180,140,50);
+  doc.setFont('helvetica','bold');
+  doc.text('EGO STATE SCORES', margin, y);
+  y += 5;
+
+  const cardW = (W - margin*2 - 8) / 5;
+  egos.forEach((ego, i) => {
+    const x = margin + i*(cardW + 2);
+    const val = scores[ego];
+    const pct = val / 40;
+    const c = colors[ego];
+
+    // card bg
+    doc.setFillColor(255,255,255);
+    doc.setDrawColor(200,185,160);
+    doc.roundedRect(x, y, cardW, 28, 1.5, 1.5, 'FD');
+
+    // color accent top
+    doc.setFillColor(...c);
+    doc.roundedRect(x, y, cardW, 3.5, 1.5, 0, 'F');
+    doc.rect(x, y+2, cardW, 1.5, 'F');
+
+    // ego label
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...c);
+    doc.text(ego, x + cardW/2, y + 9, { align:'center' });
+
+    // score
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(26,26,46);
+    doc.text(String(val), x + cardW/2, y + 19, { align:'center' });
+
+    // /40
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(160,160,160);
+    doc.text('/ 40', x + cardW/2, y + 24, { align:'center' });
+
+    // bar bg
+    const barX = x + 3, barY = y + 26, barW = cardW - 6, barH = 1.5;
+    doc.setFillColor(220,210,195);
+    doc.rect(barX, barY, barW, barH, 'F');
+    doc.setFillColor(...c);
+    doc.rect(barX, barY, barW * pct, barH, 'F');
+  });
+
+  y += 35;
+
+  // ── グラフ ──
+  doc.setFontSize(7);
+  doc.setTextColor(180,140,50);
+  doc.setFont('helvetica','bold');
+  doc.text('EGOGRAM — EGO STATE PROFILE', margin, y);
+  y += 4;
+
+  // Chart area
+  const chartX = margin, chartY = y;
+  const chartW = W - margin*2, chartH = 80;
+  doc.setFillColor(255,255,255);
+  doc.setDrawColor(200,185,160);
+  doc.rect(chartX, chartY, chartW, chartH, 'FD');
+
+  // grid lines y: 0,10,20,30,40
+  const innerX = chartX + 10, innerW = chartW - 14;
+  const innerY = chartY + 5, innerH = chartH - 13;
+
+  for (let v = 0; v <= 40; v += 10) {
+    const gy = innerY + innerH - (v/40)*innerH;
+    doc.setDrawColor(230,220,205);
+    doc.setLineWidth(0.2);
+    doc.line(innerX, gy, innerX + innerW, gy);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6);
+    doc.setTextColor(160,160,160);
+    doc.text(String(v), innerX - 2, gy + 1, { align:'right' });
+  }
+
+  // Points & line
+  const pts = egos.map((ego, i) => ({
+    x: innerX + (i / (egos.length-1)) * innerW,
+    y: innerY + innerH - (scores[ego]/40)*innerH,
+    ego, val: scores[ego], c: colors[ego]
+  }));
+
+  // fill area
+  doc.setFillColor(26,26,46,15);
+  // draw polygon
+  const polyPts = [
+    [pts[0].x, pts[0].y],
+    ...pts.map(p => [p.x, p.y]),
+    [pts[pts.length-1].x, innerY+innerH],
+    [pts[0].x, innerY+innerH],
+  ];
+
+  // line
+  doc.setDrawColor(26,26,46);
+  doc.setLineWidth(0.8);
+  for (let i=0; i<pts.length-1; i++) {
+    doc.line(pts[i].x, pts[i].y, pts[i+1].x, pts[i+1].y);
+  }
+
+  // dots & labels
+  pts.forEach(p => {
+    doc.setFillColor(...p.c);
+    doc.circle(p.x, p.y, 2, 'F');
+    doc.setFillColor(255,255,255);
+    doc.circle(p.x, p.y, 1, 'F');
+
+    // ego label
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...p.c);
+    doc.text(p.ego, p.x, innerY + innerH + 5, { align:'center' });
+
+    // score above dot
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(26,26,46);
+    doc.text(String(p.val), p.x, p.y - 3, { align:'center' });
+  });
+
+  y = chartY + chartH + 8;
+
+  // ── 説明表 ──
+  doc.setFontSize(7);
+  doc.setTextColor(180,140,50);
+  doc.setFont('helvetica','bold');
+  doc.text('INTERPRETATION GUIDE', margin, y);
+  y += 5;
+
+  const descriptions = [
+    ['CP', 'Critical Parent',    '批判的親', 'Disciplined, moralistic, strong sense of justice and ideals.'],
+    ['NP', 'Nurturing Parent',   '養育的親', 'Warm, caring, nurturing. High empathy and support for others.'],
+    ['A',  'Adult',              '成人',    'Logical, rational, objective. Data-driven decision making.'],
+    ['FC', 'Free Child',         '自由な子ども', 'Spontaneous, curious, creative. Expresses emotions freely.'],
+    ['AC', 'Adapted Child',      '順応した子ども', 'Cooperative, compliant, self-suppressing. Adapts to others.'],
+  ];
+
+  const rowH = 9;
+  descriptions.forEach((row, i) => {
+    const ry = y + i*rowH;
+    const c = colors[row[0]];
+    // stripe
+    if (i%2===0) {
+      doc.setFillColor(248,245,240);
+      doc.rect(margin, ry, W-margin*2, rowH, 'F');
+    }
+    // color dot
+    doc.setFillColor(...c);
+    doc.circle(margin+3, ry+rowH/2, 1.5, 'F');
+    // ego code
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...c);
+    doc.text(row[0], margin+8, ry+rowH/2+1);
+    // english name
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(120,120,120);
+    doc.text(row[1], margin+22, ry+rowH/2+1);
+    // english description
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(60,60,60);
+    doc.text(row[3], margin+70, ry+rowH/2+1);
+
+  });
+
+  y += descriptions.length * rowH + 8;
+
+  // ── 備考 ──
+  if (userData.note) {
+    doc.setFontSize(7);
+    doc.setTextColor(150,130,100);
+    doc.setFont('helvetica','italic');
+    doc.text('Note: ' + userData.note, margin, y);
+    y += 6;
+  }
+
+  // ── フッター ──
+  doc.setFillColor(240,235,225);
+  doc.rect(0, H-12, W, 12, 'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(150,140,120);
+  doc.text('Egogram — Transactional Analysis Ego State Test', margin, H-5);
+  doc.text('50 Questions / 5 Ego States', W-margin, H-5, { align:'right' });
+
+  const fileName = `egogram_${userData.name}_${userData.date}.pdf`;
+
+  // Base64で取得してGASにも送信
+  const pdfBase64 = doc.output('datauristring').split(',')[1];
+  doc.save(fileName);
+
+  // Googleドライブに自動アップロード
+  uploadToGoogleDrive(pdfBase64);
+
+  btn.textContent = '📄 PDFをダウンロード';
+  btn.disabled = false;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  Google Drive 自動送信
+//  ★ GASをデプロイしたら下のURLを書き換える
+// ═══════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyYSaSHW80hi1pqUwMa2s-E35xR9kgTtsDGy7iRfc6ySKEnwGK9b_pf5pokbNR42xWz/exec';
+
+async function uploadToGoogleDrive(pdfBase64) {
+  if (!GAS_URL || GAS_URL.includes('ここに')) return;
+
+  try {
+    const payload = {
+      name: userData.name,
+      date: userData.date,
+      note: userData.note,
+      pdf:  pdfBase64,
+    };
+    // GASはapplication/jsonをCORSで弾くためContent-TypeはplainTextで送る
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (json.status === 'success') {
+      console.log('Googleドライブに保存しました:', json.fileUrl);
+    } else {
+      console.warn('GAS保存エラー:', json.message);
+    }
+  } catch (err) {
+    console.warn('Googleドライブ送信失敗（ダウンロードは完了しています）:', err);
+  }
+}
+
+// ── Init ──
+document.getElementById('field-date').value = new Date().toISOString().slice(0,10);
+updateProgress();
+</script>
+</body>
+</html>
